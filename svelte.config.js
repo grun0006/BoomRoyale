@@ -3,7 +3,9 @@ import adapter from '@sveltejs/adapter-node';
 export default {
   kit: {
     adapter: adapter(),
-    csrf: false,
+    csrf: {
+      trustedOrigins: []
+    },
     csp: {
       mode: 'auto',
       directives: {
