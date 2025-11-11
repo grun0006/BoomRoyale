@@ -128,11 +128,22 @@ setInterval(() => {
         if (nearbyEnemy) {
           projectiles.push({
             troopId: troop.id,
-            targetId: troop.targetId,
+            targetId: nearbyEnemy.enemy.id,
             x: troop.x + TROOP_SIZE / 2,
             y: troop.y + TROOP_SIZE / 2,
             targetX: nearbyEnemy.enemy.x + TROOP_SIZE / 2,
             targetY: nearbyEnemy.enemy.y + TROOP_SIZE / 2,
+          });
+        }
+
+        if (targetTowerObj) {
+          projectiles.push({
+            troopId: troop.id,
+            targetId: targetTowerObj.enemy.id,
+            x: troop.x + TROOP_SIZE / 2,
+            y: troop.y + TROOP_SIZE / 2,
+            targetX: targetTowerObj.enemy.x + TOWER_SIZE / 2,
+            targetY: targetTowerObj.enemy.y + TOWER_SIZE / 2,
           });
         }
 
@@ -154,15 +165,15 @@ setInterval(() => {
 
         if (enemy.hp <= 0) {
           troops.splice(troops.indexOf(enemy), 1);
-
-          const troop = troops.find((t) => t.id === projectile.troopId);
-
-          if (troop) {
-            troop.state = "moving";
-          }
         }
 
         console.log(enemy.hp)
+      }
+
+      const troop = troops.find((t) => t.id === projectile.troopId);
+
+      if (troop) {
+        troop.state = "moving";
       }
 
       projectiles.splice(projectiles.indexOf(projectile), 1);
