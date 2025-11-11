@@ -125,14 +125,16 @@ setInterval(() => {
       }
 
       if (troop.attackCooldown <= 0) {
-        projectiles.push({
-          troopId: troop.id,
-          targetId: troop.targetId,
-          x: troop.x + TROOP_SIZE / 2,
-          y: troop.y + TROOP_SIZE / 2,
-          targetX: nearbyEnemy.enemy.x + TROOP_SIZE / 2,
-          targetY: nearbyEnemy.enemy.y + TROOP_SIZE / 2,
-        });
+        if (nearbyEnemy) {
+          projectiles.push({
+            troopId: troop.id,
+            targetId: troop.targetId,
+            x: troop.x + TROOP_SIZE / 2,
+            y: troop.y + TROOP_SIZE / 2,
+            targetX: nearbyEnemy.enemy.x + TROOP_SIZE / 2,
+            targetY: nearbyEnemy.enemy.y + TROOP_SIZE / 2,
+          });
+        }
 
         troop.attackCooldown = 40;
       }
