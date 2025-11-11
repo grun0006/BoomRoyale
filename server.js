@@ -17,6 +17,7 @@ let towers = [
   { id: 1, x: 325, y: 100, hp: 500, team: "red" },
   { id: 2, x: 325, y: 700, hp: 500, team: "blue" },
 ];
+let projectiles = [];
 
 let playerCount = 0;
 
@@ -27,7 +28,7 @@ io.on("connection", (socket) => {
   socket.team = team;
   playerCount++;
 
-  socket.emit("init", { troops, towers, team });
+  socket.emit("init", { troops, towers, projectiles, team });
 
   socket.on("spawn", ({ x, y }) => {
     const troop = {
@@ -37,10 +38,11 @@ io.on("connection", (socket) => {
       team: socket.team,
       state: "moving",
       targetId: null,
-      attackCooldown: 0,
+      attackCooldown: 40,
+      hp: 100,
     };
     troops.push(troop);
-    io.emit("update", { troops, towers });
+    io.emit("update", { troops, towers, projectiles });
   });
 
   socket.on("attack", ({ troopId, targetId }) => {
@@ -54,16 +56,43 @@ io.on("connection", (socket) => {
       resetGame();
     }
 
-    io.emit("update", { troops, towers });
+    io.emit("update", { troops, towers, projectiles });
   });
 });
 
 setInterval(() => {
   const TROOP_SPEED = 2;
   const ATTACK_RANGE = 120;
+  const TROOP_DAMANGE = 10
 
   troops.forEach((troop) => {
+    const enemyTroops = troops.filter((t) => t.team !== troop.team)
+
+    const nearbyEnemy = enemyTroops
+      .map((enemy) => ({
+        enemy,
+        dist: Math.hypot(
+          enemy.x + TROOP_SIZE / 2 - (troop.x + TROOP_SIZE / 2),
+          enemy.y + TROOP_SIZE / 2 - (troop.y + TROOP_SIZE / 2)
+        ),
+      }))
+      .sort((a, b) => a.dist - b.dist)[0];
+
     if (troop.state === "moving") {
+      if (nearbyEnemy && nearbyEnemy.dist <= ATTACK_RANGE) {
+        troop.state = "attacking";
+        troop.targetId = nearbyEnemy.enemy.id;
+
+        projectiles.push({
+          troopId: troop.id,
+          targetId: troop.targetId,
+          x: troop.x + TROOP_SIZE / 2,
+          y: troop.y + TROOP_SIZE / 2,
+          targetX: nearbyEnemy.enemy.x + TROOP_SIZE / 2,
+          targetY: nearbyEnemy.enemy.y + TROOP_SIZE / 2,
+        });
+      }
+
       const targetTowerObj = towers
         .filter((t) => t.team !== troop.team)
         .map((t) => ({
@@ -89,9 +118,59 @@ setInterval(() => {
         troop.y += Math.sin(angle) * TROOP_SPEED;
       }
     }
+
+    if (troop.state === "attacking") {
+      if (troop.attackCooldown > 0) {
+        troop.attackCooldown -= 1;
+      }
+
+      if (troop.attackCooldown <= 0) {
+        projectiles.push({
+          troopId: troop.id,
+          targetId: troop.targetId,
+          x: troop.x + TROOP_SIZE / 2,
+          y: troop.y + TROOP_SIZE / 2,
+          targetX: nearbyEnemy.enemy.x + TROOP_SIZE / 2,
+          targetY: nearbyEnemy.enemy.y + TROOP_SIZE / 2,
+        });
+
+        troop.attackCooldown = 40;
+      }
+    }
   });
 
-  io.emit("update", { troops, towers });
+  projectiles.forEach((projectile) => {
+    const dx = projectile.targetX - projectile.x;
+    const dy = projectile.targetY - projectile.y;
+    const dist = Math.hypot(dx, dy);
+
+    if (dist < 4) {
+      const enemy = troops.find((t) => t.id === projectile.targetId);
+
+      if (enemy) {
+        enemy.hp -= 10;
+
+        if (enemy.hp <= 0) {
+          troops.splice(troops.indexOf(enemy), 1);
+
+          const troop = troops.find((t) => t.id === projectile.troopId);
+
+          if (troop) {
+            troop.state = "moving";
+          }
+        }
+
+        console.log(enemy.hp)
+      }
+
+      projectiles.splice(projectiles.indexOf(projectile), 1);
+    } else {
+      projectile.x += (dx / dist) * 4;
+      projectile.y += (dy / dist) * 4;
+    }
+  });
+
+  io.emit("update", { troops, towers, projectiles });
 }, 50);
 
 function resetGame() {
@@ -105,4 +184,4 @@ function resetGame() {
   io.emit("reset", { troops, towers });
 }
 
-server.listen(process.env.PORT || 10000, () => console.log("Server running on 3000"));
+server.listen(process.env.PORT || 3000, () => console.log("Server running on 3000"));

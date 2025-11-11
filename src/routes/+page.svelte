@@ -15,23 +15,25 @@
   let myTeam = null;
 
   onMount(() => {
-    socket = io("https://boomroyale-backend.onrender.com/");
+    socket = io("http://localhost:3000/");
 
     socket.on("init", (data) => {
       troops = data.troops;
       towers = data.towers;
+      projectiles = data.projectiles;
       myTeam = data.team;
     });
 
     socket.on("update", (data) => {
       troops = data.troops;
       towers = data.towers;
+      projectiles = data.projectiles;
     });
 
     socket.on("reset", (data) => {
       troops = data.troops;
       towers = data.towers;
-      projectiles = [];
+      projectiles = data.projectiles;
     });
 
     setInterval(updateProjectiles, 50);
@@ -53,42 +55,61 @@
   }
 
   function updateProjectiles() {
-    const remove = [];
-    projectiles.forEach((p, i) => {
-      const dx = p.targetX - p.x;
-      const dy = p.targetY - p.y;
-      const dist = Math.hypot(dx, dy);
+    console.log(projectiles);
 
-      if (dist < PROJECTILE_SPEED) {
-        remove.push(i);
-        socket.emit("attack", { troopId: p.troopId, targetId: p.targetId });
-      } else {
-        p.x += (dx / dist) * PROJECTILE_SPEED;
-        p.y += (dy / dist) * PROJECTILE_SPEED;
-      }
-    });
-    projectiles = projectiles.filter((_, i) => !remove.includes(i));
+    //const remove = [];
+    //projectiles.forEach((p, i) => {
+      //const dx = p.targetX - p.x;
+      //const dy = p.targetY - p.y;
+      //const dist = Math.hypot(dx, dy);
+
+      //if (dist < PROJECTILE_SPEED) {
+        //remove.push(i);
+        //socket.emit("attack", { troopId: p.troopId, targetId: p.targetId });
+      //} else {
+        //p.x += (dx / dist) * PROJECTILE_SPEED;
+        //p.y += (dy / dist) * PROJECTILE_SPEED;
+      //}
+    //});
+    //projectiles = projectiles.filter((_, i) => !remove.includes(i));
   }
 
-  $: troops.forEach((t) => {
-    if (
-      t.state === "attacking" &&
-      t.targetId &&
-      !projectiles.find((p) => p.troopId === t.id)
-    ) {
-      const tower = towers.find((to) => to.id === t.targetId);
-      if (!tower) return;
+  //$: troops.forEach((t) => {
+    //if (
+      //t.state === "attacking" &&
+      //t.targetId &&
+      //!projectiles.find((p) => p.troopId === t.id)
+    //) {
+      //const tower = towers.find((to) => to.id === t.targetId);
+      //let troop;
 
-      projectiles.push({
-        troopId: t.id,
-        targetId: t.targetId,
-        x: t.x + TROOP_SIZE / 2,
-        y: t.y + TROOP_SIZE / 2,
-        targetX: tower.x + TOWER_SIZE / 2,
-        targetY: tower.y + TOWER_SIZE / 2,
-      });
-    }
-  });
+      //if (!tower) {
+        //troop = troops.find((to) => to.id === t.targetId)
+      //}
+
+      //if (tower) {
+        //projectiles.push({
+          //troopId: t.id,
+          //targetId: t.targetId,
+          //x: t.x + TROOP_SIZE / 2,
+          //y: t.y + TROOP_SIZE / 2,
+          //targetX: tower.x + TOWER_SIZE / 2,
+          //targetY: tower.y + TOWER_SIZE / 2,
+        //});
+      //}
+
+      //if (troop) {
+        //projectiles.push({
+          //troopId: t.id,
+          //targetId: t.targetId,
+          //x: t.x + TROOP_SIZE / 2,
+          //y: t.y + TROOP_SIZE / 2,
+          //targetX: troop.x + TROOP_SIZE / 2,
+          //targetY: troop.y + TROOP_SIZE / 2,
+        //});
+      //}
+    //}
+  //});
 </script>
 
 <h1 class="text-center text-3xl mb-4">Boom Royale ⚔️ (Team {myTeam})</h1>
