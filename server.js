@@ -69,40 +69,41 @@ setInterval(() => {
     const enemyTroops = troops.filter((t) => t.team !== troop.team)
 
     const nearbyEnemy = enemyTroops
-      .map((enemy) => ({
-        enemy,
-        dist: Math.hypot(
-          enemy.x + TROOP_SIZE / 2 - (troop.x + TROOP_SIZE / 2),
-          enemy.y + TROOP_SIZE / 2 - (troop.y + TROOP_SIZE / 2)
-        ),
-      }))
-      .sort((a, b) => a.dist - b.dist)[0];
-
+        .map((enemy) => ({
+          enemy,
+          dist: Math.hypot(
+            enemy.x + TROOP_SIZE / 2 - (troop.x + TROOP_SIZE / 2),
+            enemy.y + TROOP_SIZE / 2 - (troop.y + TROOP_SIZE / 2)
+          ),
+        }))
+        .sort((a, b) => a.dist - b.dist)[0];
+    
     const targetTowerObj = towers
-      .filter((t) => t.team !== troop.team)
-      .map((t) => ({
-        tower: t,
-        dist: Math.hypot(
-          t.x + TOWER_SIZE / 2 - (troop.x + TROOP_SIZE / 2),
-          t.y + TOWER_SIZE / 2 - (troop.y + TROOP_SIZE / 2)
-        ),
-      }))
-      .sort((a, b) => a.dist - b.dist)[0];
-
+        .filter((t) => t.team !== troop.team)
+        .map((t) => ({
+          tower: t,
+          dist: Math.hypot(
+            t.x + TOWER_SIZE / 2 - (troop.x + TROOP_SIZE / 2),
+            t.y + TOWER_SIZE / 2 - (troop.y + TROOP_SIZE / 2)
+          ),
+        }))
+        .sort((a, b) => a.dist - b.dist)[0];
 
     if (troop.state === "moving") {
       if (nearbyEnemy && nearbyEnemy.dist <= ATTACK_RANGE) {
         troop.state = "attacking";
         troop.targetId = nearbyEnemy.enemy.id;
+        troop.attackCooldown = 0;
 
-        projectiles.push({
-          troopId: troop.id,
-          targetId: troop.targetId,
-          x: troop.x + TROOP_SIZE / 2,
-          y: troop.y + TROOP_SIZE / 2,
-          targetX: nearbyEnemy.enemy.x + TROOP_SIZE / 2,
-          targetY: nearbyEnemy.enemy.y + TROOP_SIZE / 2,
-        });
+        //projectiles.push({
+          //id: Date.now() + Math.random(),
+          //troopId: troop.id,
+          //targetId: troop.targetId,
+          //x: troop.x + TROOP_SIZE / 2,
+          //y: troop.y + TROOP_SIZE / 2,
+          //targetX: nearbyEnemy.enemy.x + TROOP_SIZE / 2,
+          //targetY: nearbyEnemy.enemy.y + TROOP_SIZE / 2,
+        //});
       }
 
       if (!targetTowerObj) return;
@@ -121,15 +122,23 @@ setInterval(() => {
     }
 
     if (troop.state === "attacking") {
+      const targetTroop = troops.find(
+        (t) => t.id === troop.targetId && t.team !== troop.team
+      );
+      const targetTower = towers.find(
+        (t) => t.id === troop.targetId && t.team !== troop.team
+      ); 
+
       if (troop.attackCooldown > 0) {
         troop.attackCooldown -= 1;
       }
 
       if (troop.attackCooldown <= 0) {
-        if (nearbyEnemy) {
+        if (targetTroop) {
           projectiles.push({
+            id: Date.now() + Math.random(),
             troopId: troop.id,
-            targetId: nearbyEnemy.enemy.id,
+            targetId: troop.targetId,
             x: troop.x + TROOP_SIZE / 2,
             y: troop.y + TROOP_SIZE / 2,
             targetX: nearbyEnemy.enemy.x + TROOP_SIZE / 2,
@@ -137,14 +146,15 @@ setInterval(() => {
           });
         }
 
-        if (targetTowerObj) {
+        if (targetTower) {
           projectiles.push({
+            id: Date.now() + Math.random(),
             troopId: troop.id,
-            targetId: targetTowerObj.enemy.id,
+            targetId: troop.targetId,
             x: troop.x + TROOP_SIZE / 2,
             y: troop.y + TROOP_SIZE / 2,
-            targetX: targetTowerObj.enemy.x + TOWER_SIZE / 2,
-            targetY: targetTowerObj.enemy.y + TOWER_SIZE / 2,
+            targetX: targetTowerObj.tower.x + TOWER_SIZE / 2,
+            targetY: targetTowerObj.tower.y + TOWER_SIZE / 2,
           });
         }
 
@@ -160,6 +170,7 @@ setInterval(() => {
 
     if (dist < 4) {
       const enemy = troops.find((t) => t.id === projectile.targetId);
+      const tower = towers.find((t) => t.id === projectile.targetId);
 
       if (enemy) {
         enemy.hp -= 10;
@@ -167,8 +178,14 @@ setInterval(() => {
         if (enemy.hp <= 0) {
           troops.splice(troops.indexOf(enemy), 1);
         }
+      }
 
-        console.log(enemy.hp)
+      if (tower) {
+        tower.hp -= 10;
+
+        if (tower.hp <= 0) {
+          resetGame();
+        }
       }
 
       const troop = troops.find((t) => t.id === projectile.troopId);
@@ -195,7 +212,9 @@ function resetGame() {
     { id: 2, x: 325, y: 700, hp: 500, team: "blue" },
   ];
 
-  io.emit("reset", { troops, towers });
+  projectiles = [];
+
+  io.emit("reset", { troops, towers, projectiles });
 }
 
-server.listen(process.env.PORT || 10000, () => console.log("Server running on 3000"));
+server.listen(process.env.PORT || 3000, () => console.log("Server running on 3000"));
