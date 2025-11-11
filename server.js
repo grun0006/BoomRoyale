@@ -78,6 +78,18 @@ setInterval(() => {
       }))
       .sort((a, b) => a.dist - b.dist)[0];
 
+    const targetTowerObj = towers
+      .filter((t) => t.team !== troop.team)
+      .map((t) => ({
+        tower: t,
+        dist: Math.hypot(
+          t.x + TOWER_SIZE / 2 - (troop.x + TROOP_SIZE / 2),
+          t.y + TOWER_SIZE / 2 - (troop.y + TROOP_SIZE / 2)
+        ),
+      }))
+      .sort((a, b) => a.dist - b.dist)[0];
+
+
     if (troop.state === "moving") {
       if (nearbyEnemy && nearbyEnemy.dist <= ATTACK_RANGE) {
         troop.state = "attacking";
@@ -92,17 +104,6 @@ setInterval(() => {
           targetY: nearbyEnemy.enemy.y + TROOP_SIZE / 2,
         });
       }
-
-      const targetTowerObj = towers
-        .filter((t) => t.team !== troop.team)
-        .map((t) => ({
-          tower: t,
-          dist: Math.hypot(
-            t.x + TOWER_SIZE / 2 - (troop.x + TROOP_SIZE / 2),
-            t.y + TOWER_SIZE / 2 - (troop.y + TROOP_SIZE / 2)
-          ),
-        }))
-        .sort((a, b) => a.dist - b.dist)[0];
 
       if (!targetTowerObj) return;
 
