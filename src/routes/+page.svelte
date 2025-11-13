@@ -14,6 +14,8 @@
   let socket;
   let myTeam = null;
 
+  let elxir = 100;
+
   onMount(() => {
     socket = io("https://boomroyale-backend.onrender.com");
 
@@ -40,6 +42,10 @@
   function spawnTroop(event) {
     if (!myTeam) return;
 
+    if (elxir < 50) {
+      return;
+    }
+
     const rect = event.currentTarget.getBoundingClientRect();
     let x = event.clientX - rect.left - TROOP_SIZE / 2;
     let y = event.clientY - rect.top - TROOP_SIZE / 2;
@@ -49,11 +55,33 @@
       y = ARENA_HEIGHT - y - TROOP_SIZE;
     }
 
+    if ( myTeam === "blue" && y < rect.height / 2) {
+      return;
+    }
+
+    if ( myTeam === "red" && y > rect.height / 2) {
+      return;
+    }
+
+    elxir -= 50;
+
     socket.emit("spawn", { x, y, team: myTeam });
   }
+
+  setInterval(() => {
+    if (elxir >= 100) {
+      return
+    }
+
+    elxir += 10;
+  }, 1000);
 </script>
 
 <h1 class="text-center text-3xl mb-4">Boom Royale ⚔️ (Team {myTeam})</h1>
+
+<div style="position: absolute; width: 400px; height: 70px; background-color: black; z-index: 10; left: 150px; top: 845px;">
+  <div style="position: absolute; width: {elxir}%; height: 100%; background-color: cyan; z-index: 10;"></div>
+</div>
 
 <div
   class="arena"
