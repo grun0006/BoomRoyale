@@ -221,4 +221,4 @@ function resetGame() {
   io.emit("reset", { troops, towers, projectiles });
 }
 
-server.listen(process.env.PORT || 3000, () => console.log("Server running on 3000"));
+server.listen(process.env.PORT || 10000, () => console.log("Server running on 3000"));

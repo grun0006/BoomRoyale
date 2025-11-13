@@ -17,7 +17,7 @@
   let elxir = 100;
 
   onMount(() => {
-    socket = io("http://localhost:3000");
+    socket = io("https://boomroyale-backend.onrender.com/");
 
     const context = new AudioContext();
     let buffer;
