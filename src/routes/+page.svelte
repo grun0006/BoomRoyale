@@ -17,7 +17,16 @@
   let elxir = 100;
 
   onMount(() => {
-    socket = io("https://boomroyale-backend.onrender.com");
+    socket = io("http://localhost:3000");
+
+    const context = new AudioContext();
+    let buffer;
+
+    fetch("/BowlingSound.mp3")
+      .then(res => res.arrayBuffer())
+      .then(arrayBuffer => context.decodeAudioData(arrayBuffer))
+      .then(decoded => buffer = decoded);
+
 
     socket.on("init", (data) => {
       troops = data.troops;
@@ -30,6 +39,13 @@
       troops = data.troops;
       towers = data.towers;
       projectiles = data.projectiles;
+    });
+
+    socket.on("playSound", (data) => {
+      const source = context.createBufferSource();
+      source.buffer = buffer;
+      source.connect(context.destination);
+      source.start(0);
     });
 
     socket.on("reset", (data) => {

@@ -12,6 +12,8 @@ const io = new Server(server, {
 const TROOP_SIZE = 100;
 const TOWER_SIZE = 50;
 
+const bowlerSound = "/BowlingSound.mp3";
+
 let troops = [];
 let towers = [
   { id: 1, x: 325, y: 100, hp: 500, team: "red" },
@@ -43,6 +45,8 @@ io.on("connection", (socket) => {
     };
     troops.push(troop);
     io.emit("update", { troops, towers, projectiles });
+
+    io.emit("playSound", { bowlerSound });
   });
 
   socket.on("attack", ({ troopId, targetId }) => {
@@ -217,4 +221,4 @@ function resetGame() {
   io.emit("reset", { troops, towers, projectiles });
 }
 
-server.listen(process.env.PORT || 10000, () => console.log("Server running on 3000"));
+server.listen(process.env.PORT || 3000, () => console.log("Server running on 3000"));
