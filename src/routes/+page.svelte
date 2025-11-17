@@ -1,166 +1,102 @@
 <script>
-  import { onMount } from "svelte";
-  import io from "socket.io-client";
+    import { goto } from "$app/navigation";
+    import { onMount } from "svelte";
+    import io from "socket.io-client";
 
-  const ARENA_WIDTH = 700;
-  const ARENA_HEIGHT = 800;
-  const TROOP_SIZE = 100;
-  const TOWER_SIZE = 50;
-  const PROJECTILE_SPEED = 8;
+    let socket;
+    let lobbies = [];
 
-  let troops = [];
-  let towers = [];
-  let projectiles = [];
-  let socket;
-  let myTeam = null;
+    let username = "";
 
-  let elxir = 100;
+    let uiOpacity = 1;
+    let uiSpinningWheelOpacity = 0;
+    let cardOpacity = 0;
+    let winCardOpacity = 0;
+    let openingChest = false;
+    let chestOpend = false;
 
-  onMount(() => {
-    socket = io("https://boomroyale-backend.onrender.com/");
+    const troopCards = [{name: "Bowler"}, {name: "Knight"}, {name: "Archers"}, {name: "Golem"}]
+    const chestCards = troopCards;
 
-    const context = new AudioContext();
-    let buffer;
+    let randomCard = chestCards[0];
+    let winCard = chestCards[0];
 
-    fetch("/BowlingSound.mp3")
-      .then(res => res.arrayBuffer())
-      .then(arrayBuffer => context.decodeAudioData(arrayBuffer))
-      .then(decoded => buffer = decoded);
+    onMount(() => {
+        socket = io("https://boomroyale-backend.onrender.com");
 
+        socket.on("lobbyList", (list) => {
+            lobbies = list;
 
-    socket.on("init", (data) => {
-      troops = data.troops;
-      towers = data.towers;
-      projectiles = data.projectiles;
-      myTeam = data.team;
+            console.log(lobbies);
+        })
     });
 
-    socket.on("update", (data) => {
-      troops = data.troops;
-      towers = data.towers;
-      projectiles = data.projectiles;
-    });
-
-    socket.on("playSound", (data) => {
-      const source = context.createBufferSource();
-      source.buffer = buffer;
-      source.connect(context.destination);
-      source.start(0);
-    });
-
-    socket.on("reset", (data) => {
-      troops = data.troops;
-      towers = data.towers;
-      projectiles = data.projectiles;
-    });
-  });
-
-  function spawnTroop(event) {
-    if (!myTeam) return;
-
-    if (elxir < 50) {
-      return;
+    function startGame() {
+        if (username != "") {
+            goto(`lobby/${username}`);
+        }
     }
 
-    const rect = event.currentTarget.getBoundingClientRect();
-    let x = event.clientX - rect.left - TROOP_SIZE / 2;
-    let y = event.clientY - rect.top - TROOP_SIZE / 2;
-
-    if (myTeam === "red") {
-      x = ARENA_WIDTH - x - TROOP_SIZE;
-      y = ARENA_HEIGHT - y - TROOP_SIZE;
+    function joinGame(lobbyId) {
+        goto(`lobby/${lobbyId}`);
     }
 
-    if ( myTeam === "blue" && y < rect.height / 2) {
-      return;
+    function openChest() {
+        uiOpacity = 0.5;
+        uiSpinningWheelOpacity = 0.7;
+        cardOpacity = 1;
+        openingChest = true;
+
+        let cardCount = 0;
+
+        const spinCards = setInterval(() => {
+        randomCard = chestCards[Math.floor(Math.random() * chestCards.length)];
+
+        cardCount++;
+
+        if (cardCount >= 20) {
+            clearInterval(spinCards);
+
+            winCard = chestCards[Math.floor(Math.random() * chestCards.length)];
+            cardOpacity = 0;
+            winCardOpacity = 1;
+            chestOpend = true;
+
+            setTimeout(() => {
+            uiOpacity = 1;
+            uiSpinningWheelOpacity = 0;
+            winCardOpacity = 0;
+            openingChest = false;
+            }, 5000);
+        }
+        }, 500);
     }
-
-    if ( myTeam === "red" && y > rect.height / 2) {
-      return;
-    }
-
-    elxir -= 50;
-
-    socket.emit("spawn", { x, y, team: myTeam });
-  }
-
-  setInterval(() => {
-    if (elxir >= 100) {
-      return
-    }
-
-    elxir += 10;
-  }, 1000);
 </script>
 
-<h1 class="text-center text-3xl mb-4">Boom Royale ⚔️ (Team {myTeam})</h1>
-
-<div style="position: absolute; width: 400px; height: 70px; background-color: black; z-index: 10; left: 150px; top: 845px;">
-  <div style="position: absolute; width: {elxir}%; height: 100%; background-color: cyan; z-index: 10;"></div>
+<div style="width: 100%; height: 80px; background-color: darkgrey; position: absolute; top: 0px; left: 0px;">
+    <input type="Text" bind:value={username} placeholder="Voer een Username in" style="position: absolute; left: 20px; top: 30px;">
+    <h1 style="position: absolute; color: white; left: 1500px;">173624 Gold</h1>
 </div>
 
-<div
-  class="arena"
-  on:click={spawnTroop}
-  style="
-    position: relative; 
-    width: {ARENA_WIDTH}px; 
-    height: {ARENA_HEIGHT}px;
-    transform: {myTeam === 'red' ? 'rotate(180deg)' : 'none'};
-  "
->
-  <img src="/Arena.jpg" style="width: 100%; height: 100%;" />
+<ul style="position: absolute; top: 100px; left: 100px;">
+    {#each lobbies as lobby}
+        <li>
+            Lobby {lobby}
+            <button on:click={() => joinGame(lobby)}>Join game</button>
+        </li>
+    {/each}
+</ul>
 
-  {#each towers as tower (tower.id)}
-    <div
-      style="
-        position: absolute;
-        left: {tower.x}px;
-        top: {tower.y}px;
-        width: {TOWER_SIZE}px;
-        height: {TOWER_SIZE}px;
-        background: {tower.team === myTeam ? 'blue' : 'red'};
-        border-radius: 10px;
-        border: 2px solid white;
-        text-align: center;
-        color: white;
-        font-size: 12px;
-        font-weight: bold;
-        line-height: {TOWER_SIZE}px;
-        transform: {myTeam === 'red' ? 'rotate(180deg)' : 'none'};
-      "
-    >
-      {tower.hp}
-    </div>
-  {/each}
+<div style="position: absolute; width: 700px; height: 800px; left: 1000px; top: 90px;">
+  <img src="/Royal_Wild_Chest.webp" style="position: absolute; width: 200px; left: 250px; top: 200px; opacity: {uiOpacity};">
+  <button style="position: absolute; width: 250px; height: 100px; font-size: 40px; left: 225px; top: 450px; z-index: 10" on:click={openChest} disabled={openingChest}>Open Chest</button>
 
-  {#each troops as troop (troop.id)}
-    <img
-      src="/Bowler.webp"
-      style="
-        position: absolute;
-        left: {troop.x}px;
-        top: {troop.y + Math.sin(Date.now() / 200) * 2}px;
-        width: {TROOP_SIZE}px;
-        height: {TROOP_SIZE}px;
-        pointer-events: none;
-        filter: drop-shadow(0 0 6px {troop.team === myTeam ? 'blue' : 'red'});
-        transform: {myTeam === 'red' ? 'rotate(180deg)' : 'none'};
-      "
-    />
-  {/each}
+  <img src={"/" + randomCard.name + ".webp"} style="opacity: {cardOpacity}; position: absolute; left: 225px; top: 50px; width: 250px; height: 350px; object-fit: contain;">
+  <img src={"/" + winCard.name + ".webp"} style="opacity: {winCardOpacity}; position: absolute; left: 225px; top: 50px; width: 250px; height: 350px; object-fit: contain;">
 
-  {#each projectiles as p (p.id)}
-    <div
-      style="
-        position: absolute;
-        left: {p.x}px;
-        top: {p.y}px;
-        width: 20px;
-        height: 20px;
-        background: grey;
-      "
-    >
-    </div>
-  {/each}
+  <h1 style="position: absolute; left: 300px; opacity: {winCardOpacity}">{winCard.name}</h1>
+</div>
+
+<div style="position: absolute; left: 750px; top: 780px;">
+    <button style="width: 200px; height: 100px; font-size: 50px;" on:click={startGame}>Battle</button>
 </div>
