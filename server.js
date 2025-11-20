@@ -1,6 +1,7 @@
 import express from "express";
 import { Server } from "socket.io";
 import http from "http";
+import { getPlayer, createPlayer } from "./playerModel.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -27,6 +28,18 @@ let playerCount = 0;
 
 io.on("connection", (socket) => {
   io.emit("lobbyList", Object.keys(lobbies));
+
+  socket.on("login", async (username) => {
+    let player = await getPlayer(username);
+
+    if (!player) {
+      player = await createPlayer(username);
+    }
+
+    socket.player = player;
+
+    socket.emit("playerData", player);
+  });
 
   socket.on("joinLobby", (lobbyId) => {
     console.log(socket.id);
@@ -265,4 +278,4 @@ function resetGame(lobbyId) {
   io.to(lobbyId).emit("reset", lobby);
 }
 
-server.listen(process.env.PORT || 10000, () => console.log("Server running on 3000"));
+server.listen(process.env.PORT || 3000, () => console.log("Server running on 3000"));
