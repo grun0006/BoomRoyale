@@ -278,4 +278,4 @@ function resetGame(lobbyId) {
   io.to(lobbyId).emit("reset", lobby);
 }
 
-server.listen(process.env.PORT || 3000, () => console.log("Server running on 3000"));
+server.listen(process.env.PORT || 10000, () => console.log("Server running on 3000"));
