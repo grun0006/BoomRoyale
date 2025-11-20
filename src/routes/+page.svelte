@@ -105,7 +105,7 @@
     <h1 style="position: absolute; color: white; left: 50px;">{username}</h1>
 </div>
 
-<ul style="position: absolute; top: 100px; left: 100px;">
+<ul style="position: absolute; top: 400px; left: 100px;">
     {#each lobbies as lobby}
         <li>
             Lobby {lobby}
