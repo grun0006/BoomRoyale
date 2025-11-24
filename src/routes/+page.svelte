@@ -91,6 +91,10 @@
         }
     }
 
+    function buyChest() {
+        window.location = "https://betaalverzoek.rabobank.nl/betaalverzoek/?id=RhJlJvlaRjKjAQttJtbv7g";
+    }
+
     function sendUsername() {
         if (username != "") {
             usernamePromptOpacity = 0;
@@ -117,6 +121,7 @@
 <div style="position: absolute; width: 700px; height: 800px; left: 1000px; top: 90px;">
   <img src="/Royal_Wild_Chest.webp" style="position: absolute; width: 200px; left: 250px; top: 200px; opacity: {uiOpacity};">
   <button style="position: absolute; width: 250px; height: 100px; font-size: 40px; left: 225px; top: 450px; z-index: 10" on:click={openChest} disabled={openingChest}>Open Chest</button>
+  <button style="position: absolute; width: 250px; height: 100px; font-size: 40px; left: 225px; top: 600px; z-index: 10" on:click={buyChest} disabled={openingChest}>Buy Chest</button>
 
   <img src={"/" + randomCard.name + ".webp"} style="opacity: {cardOpacity}; position: absolute; left: 225px; top: 50px; width: 250px; height: 350px; object-fit: contain;">
   <img src={"/" + winCard.name + ".webp"} style="opacity: {winCardOpacity}; position: absolute; left: 225px; top: 50px; width: 250px; height: 350px; object-fit: contain;">
