@@ -29,7 +29,7 @@
     let ownedCards = [];
 
     onMount(() => {
-        socket = io("http://localhost:3000");
+        socket = io("https://boomroyale-backend.onrender.com/");
 
         socket.on("playerData", (player) => {
             playerData = player;
