@@ -1,7 +1,7 @@
 import express from "express";
 import { Server } from "socket.io";
 import http from "http";
-import { getPlayer, createPlayer } from "./playerModel.js";
+import { getPlayer, createPlayer, updatePlayer } from "./playerModel.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -38,6 +38,22 @@ io.on("connection", (socket) => {
 
     socket.player = player;
 
+    socket.emit("playerData", player);
+  });
+
+  socket.on("buyChest", async (player) => {
+    player.chests.push("chest");
+    await updatePlayer(player);
+    socket.emit("playerData", player);
+  });
+
+  socket.on("openChest", async (data) => {
+    const player = data[0];
+    const cardWon = data[1];
+
+    player.chests.pop();
+    player.ownedCards.push(cardWon.name);
+    await updatePlayer(player);
     socket.emit("playerData", player);
   });
 
@@ -278,4 +294,4 @@ function resetGame(lobbyId) {
   io.to(lobbyId).emit("reset", lobby);
 }
 
-server.listen(process.env.PORT || 10000, () => console.log("Server running on 3000"));
+server.listen(process.env.PORT || 3000, () => console.log("Server running on 3000"));

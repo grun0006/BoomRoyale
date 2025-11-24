@@ -17,8 +17,8 @@ export async function getPlayer(username) {
 }
 
 export async function createPlayer(username) {
-    const ownedCards = ["Bowler", "Archers"];
-    const deck = ["Bowler", "Archers", "", "", ""];
+    const ownedCards = ["Bowler", "", "", ""];
+    const deck = ["Bowler", "", "", "", ""];
     const chests = [];
 
     await db.run("INSERT INTO players (username, ownedCards, deck, chests) VALUES (?, ?, ?, ?)", username, JSON.stringify(ownedCards), JSON.stringify(deck), JSON.stringify(chests));

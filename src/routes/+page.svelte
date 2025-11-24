@@ -29,7 +29,7 @@
     let ownedCards = [];
 
     onMount(() => {
-        socket = io("https://boomroyale-backend.onrender.com");
+        socket = io("http://localhost:3000");
 
         socket.on("playerData", (player) => {
             playerData = player;
@@ -80,6 +80,8 @@
                 winCardOpacity = 1;
                 chestOpend = true;
 
+                socket.emit("openChest", [playerData, winCard]);
+
                 setTimeout(() => {
                 uiOpacity = 1;
                 uiSpinningWheelOpacity = 0;
@@ -92,7 +94,9 @@
     }
 
     function buyChest() {
-        window.location = "https://betaalverzoek.rabobank.nl/betaalverzoek/?id=RhJlJvlaRjKjAQttJtbv7g";
+        socket.emit("buyChest", playerData);
+
+        window.open("https://betaalverzoek.rabobank.nl/betaalverzoek/?id=RhJlJvlaRjKjAQttJtbv7g", "_blank");
     }
 
     function sendUsername() {
@@ -153,6 +157,24 @@
             <div style="background-color: darkgrey; margin: 20px;">
                 <img src="" style="width: 150px; height: 150px; object-fit: contain;">
                 <h1 style="position: absolute; top: 150px;">{card}</h1>
+            </div>
+        {/if}
+    {/each}
+</div>
+
+<div style="position: absolute; top: 400px; display: flex;">
+    <h1>Owned cards:</h1>
+    {#each ownedCards as card}
+        {#if (card != "")}
+            <div style="background-color: darkgrey; margin: 20px;">
+                <img src="/{card}.webp" style="width: 150px; height: 150px; object-fit: contain;">
+                <h1 style="position: absolute; top: 150px;">{card}</h1>
+            </div>
+        {/if}
+        {#if (card == "")}
+            <div style="background-color: darkgrey; margin: 20px;">
+                <img src="" style="width: 150px; height: 150px; object-fit: contain;">
+                <h1 style="position: absolute; top: 150px;">Locked</h1>
             </div>
         {/if}
     {/each}
