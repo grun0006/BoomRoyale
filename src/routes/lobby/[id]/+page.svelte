@@ -15,13 +15,36 @@
   let socket;
   let myTeam = null;
   let lobbyId;
+  let username;
+  let selectedTroop = "Bowler";
+
+  const CARD_STATS = {
+    Bowler: {
+      hp: 100,
+      damage: 10,
+      range: 100,
+      speed: 2,
+      image: "/Bowler.webp"
+    },
+    Archers: {
+      hp: 50,
+      damage: 20,
+      range: 200,
+      speed: 3,
+      image: "/Archers.webp"
+    }
+  }
+
+  let deck = [];
 
   let elxir = 100;
 
   onMount(() => {
     lobbyId = $page.params.id;
-    socket = io("https://boomroyale-backend.onrender.com");
-    socket.emit("joinLobby", lobbyId);
+    username = $page.url.searchParams.get("username")
+
+    socket = io("http://localhost:3000");
+    socket.emit("joinLobby", {lobbyId, username});
 
     const context = new AudioContext();
     let buffer;
@@ -36,6 +59,7 @@
       towers = data.towers;
       projectiles = data.projectiles;
       myTeam = data.team;
+      deck = data.deck;
     });
 
     socket.on("update", (data) => {
@@ -84,7 +108,7 @@
 
     elxir -= 50;
 
-    socket.emit("spawn", { x, y, team: myTeam });
+    socket.emit("spawn", { x, y, team: myTeam, selectedTroop: selectedTroop });
   }
 
   setInterval(() => {
@@ -100,6 +124,15 @@
 
 <div style="position: absolute; width: 400px; height: 70px; background-color: black; z-index: 10; left: 150px; top: 845px;">
   <div style="position: absolute; width: {elxir}%; height: 100%; background-color: cyan; z-index: 10;"></div>
+</div>
+
+<div style="position: absolute; left: 870px; top: 700px; width: 700px; height: 150px; background-color: grey; display: flex;">
+  {#each deck as card}
+    <div>
+      <img src={CARD_STATS[card].image} style="width: 120px; height: 120px; object-fit: contain; background-color: darkgrey;" on:click={() => selectedTroop = card}>
+      <h1 style="position: absolute; top: 90px; color: white;">{card}</h1>
+    </div>
+  {/each}
 </div>
 
 <div
@@ -139,7 +172,7 @@
 
   {#each troops as troop (troop.id)}
     <img
-      src="/Bowler.webp"
+      src={troop.image}
       style="
         position: absolute;
         left: {troop.x}px;

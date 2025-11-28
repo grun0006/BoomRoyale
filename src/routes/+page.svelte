@@ -29,7 +29,7 @@
     let ownedCards = [];
 
     onMount(() => {
-        socket = io("https://boomroyale-backend.onrender.com/");
+        socket = io("http://localhost:3000");
 
         socket.on("playerData", (player) => {
             playerData = player;
@@ -50,12 +50,12 @@
 
     function startGame() {
         if (username != "") {
-            goto(`lobby/${username}`);
+            goto(`lobby/${username}?username=${username}`);
         }
     }
 
     function joinGame(lobbyId) {
-        goto(`lobby/${lobbyId}`);
+        goto(`lobby/${lobbyId}?username=${username}`);
     }
 
     function openChest() {
@@ -113,7 +113,7 @@
     <h1 style="position: absolute; color: white; left: 50px;">{username}</h1>
 </div>
 
-<ul style="position: absolute; top: 400px; left: 100px;">
+<ul style="position: absolute; top: 700px; left: 100px;">
     {#each lobbies as lobby}
         <li>
             Lobby {lobby}

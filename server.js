@@ -15,6 +15,23 @@ const lobbies = {};
 const TROOP_SIZE = 100;
 const TOWER_SIZE = 50;
 
+const CARD_STATS = {
+  Bowler: {
+    hp: 100,
+    damage: 10,
+    range: 100,
+    speed: 2,
+    image: "/Bowler.webp"
+  },
+  Archers: {
+    hp: 50,
+    damage: 20,
+    range: 200,
+    speed: 3,
+    image: "/Archers.webp"
+  }
+}
+
 const bowlerSound = "/BowlingSound.mp3";
 
 let troops = [];
@@ -57,8 +74,9 @@ io.on("connection", (socket) => {
     socket.emit("playerData", player);
   });
 
-  socket.on("joinLobby", (lobbyId) => {
+  socket.on("joinLobby", async ({lobbyId, username}) => {
     console.log(socket.id);
+    console.log(socket);
 
     socket.join(lobbyId);
     socket.lobbyId = lobbyId;
@@ -82,19 +100,36 @@ io.on("connection", (socket) => {
 
     io.emit("lobbyList", Object.keys(lobbies));
 
-    socket.emit("init", { troops: lobby.troops, towers: lobby.towers, projectiles: lobby.projectiles, team });
+    const player = await getPlayer(username);
+    const deck = player.deck
 
-    socket.on("spawn", ({ x, y }) => {
+    socket.emit("init", { troops: lobby.troops, towers: lobby.towers, projectiles: lobby.projectiles, team, deck: deck });
+
+    socket.on("spawn", ({ x, y, team, selectedTroop }) => {
+      const card = CARD_STATS[selectedTroop];
+
+      if (!card) {
+        return;
+      }
+
       const troop = {
         id: Date.now() + Math.random(),
         x,
         y,
         team: socket.team,
+        selectedTroop,
+        image: card.image,
         state: "moving",
         targetId: null,
         attackCooldown: 40,
-        hp: 100,
+        hp: card.hp,
+        damage: card.damage,
+        range: card.range,
+        speed: card.speed
       };
+
+      console.log(troop);
+
       lobby.troops.push(troop);
       io.to(lobbyId).emit("update", lobby);
 
@@ -131,10 +166,6 @@ io.on("connection", (socket) => {
 });
 
 setInterval(() => {
-  const TROOP_SPEED = 2;
-  const ATTACK_RANGE = 120;
-  const TROOP_DAMANGE = 10
-
   for (const lobbyId in lobbies) {
     const lobby = lobbies[lobbyId];
     const { troops, towers, projectiles} = lobby;
@@ -164,7 +195,7 @@ setInterval(() => {
           .sort((a, b) => a.dist - b.dist)[0];
 
       if (troop.state === "moving") {
-        if (nearbyEnemy && nearbyEnemy.dist <= ATTACK_RANGE) {
+        if (nearbyEnemy && nearbyEnemy.dist <= troop.range) {
           troop.state = "attacking";
           troop.targetId = nearbyEnemy.enemy.id;
           troop.attackCooldown = 0;
@@ -182,7 +213,7 @@ setInterval(() => {
 
         if (!targetTowerObj) return;
 
-        if (targetTowerObj.dist <= ATTACK_RANGE) {
+        if (targetTowerObj.dist <= troop.range) {
           troop.state = "attacking";
           troop.targetId = targetTowerObj.tower.id;
           troop.attackCooldown = 0;
@@ -190,8 +221,8 @@ setInterval(() => {
           const dx = targetTowerObj.tower.x + TOWER_SIZE / 2 - (troop.x + TROOP_SIZE / 2);
           const dy = targetTowerObj.tower.y + TOWER_SIZE / 2 - (troop.y + TROOP_SIZE / 2);
           const angle = Math.atan2(dy, dx);
-          troop.x += Math.cos(angle) * TROOP_SPEED;
-          troop.y += Math.sin(angle) * TROOP_SPEED;
+          troop.x += Math.cos(angle) * troop.speed;
+          troop.y += Math.sin(angle) * troop.speed;
         }
       }
 
@@ -294,4 +325,4 @@ function resetGame(lobbyId) {
   io.to(lobbyId).emit("reset", lobby);
 }
 
-server.listen(process.env.PORT || 10000, () => console.log("Server running on 3000"));
+server.listen(process.env.PORT || 3000, () => console.log("Server running on 3000"));
