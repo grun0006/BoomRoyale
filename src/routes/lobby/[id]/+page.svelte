@@ -43,7 +43,7 @@
     lobbyId = $page.params.id;
     username = $page.url.searchParams.get("username")
 
-    socket = io("http://localhost:3000");
+    socket = io("https://boomroyale-backend.onrender.com");
     socket.emit("joinLobby", {lobbyId, username});
 
     const context = new AudioContext();
